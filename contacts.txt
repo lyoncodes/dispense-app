@@ -1,0 +1,3 @@
+{"name":"Michael Lyon","email":"lyoncodes@gmail.com","address":"621 W Galer St. Apt 402. Seattle, WA 98119"}
+{"name":"Gibbs Lyon","email":"algorithmG@gmail.com","address":"621 W Galer St. DOG HOUSE. Seattle, WA 98119"}
+{"name":"Kisa Yonk","email":"ksyonker@gmail.com","address":""}

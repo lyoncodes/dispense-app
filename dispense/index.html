@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dispense</title>
+    <!-- Don't use this in production: -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- favicon error swerve -->
+    <link rel="icon" href="data:;base64,=">
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="text/babel">
+      class App extends React.Component {
+        constructor(props){
+          super(props);
+
+          this.state = {
+            contacts: [],
+            contact: {
+              name: '',
+              email: '',
+              address: '',
+            },
+            err: "",
+          }
+
+        }
+
+        // hits /data endpoint for data from contacts.txt
+        getContacts = () => {
+          fetch('/data')
+            .then(res => res.json())
+            .then(data => this.setState({ contacts: data }));
+        }
+
+        // sets error string in state if required fields are missing
+        validateForm = () => {
+          let valid = true;
+          if (!this.state.contact['name'] || !this.state.contact['email']) {
+            this.setState({ err: '😭 please fill out required form fields' })
+            valid = false;
+          }
+          return valid;
+        }
+        
+        // formats JSON string to send to /create route
+        saveContact = () => {
+          if (this.validateForm()){
+            
+            this.state.contacts.push(this.state.contact)
+            this.setState({ contacts: this.state.contacts })
+            
+            let req = {
+              method: "POST",
+              headers: {
+              'Content-type': 'application/json'
+              },
+              body: JSON.stringify(this.state.contact)
+            }
+            fetch('/create', req)
+              .then(this.clearContact())
+          }
+        }
+
+        clearContact = () => {
+          let emptyContact = {name: "", email: "", address: ""}
+          this.setState({contact: emptyContact})
+        }
+
+        // set contact obj to newly changed form field values
+        updateHandler = (data) => {
+          this.state.contact[data.target.name] = data.target.value;
+          this.setState({ contact: this.state.contact })
+        }
+
+        // get contacts once on lifecycle hook
+        async componentDidMount() {
+          await this.getContacts();
+        }
+
+        
+        render(){
+          return (
+            <div className="grid grid-cols-1 md:grid-cols-2 overflow-hidden bg-gray-50 py-6 sm:py-12">
+              { this.state.contacts ? 
+              <div>
+                <h1 className="my-4 text-3xl md:text-5xl text-white opacity-75 font-bold leading-tight text-center bg-clip-text text-transparent bg-gradient-to-r from-green-400 via-pink-500 to-purple-500"> Contacts </h1>
+                {this.state.contacts.map((contact, idx) => (
+                  // contact template
+                  <div className="max-w-md mt-2 mx-auto bg-white rounded-xl shadow-md overflow-hidden md:max-w-2xl" key={idx}>
+                    <div className="md:flex">
+                      <div className="md:shrink-0">
+                      </div>
+                      <div className="p-8">
+                        <div className="uppercase tracking-wide text-sm text-indigo-500 font-semibold">{contact.name}</div>
+                        <p className="block mt-1 text-lg leading-tight font-medium text-black">{contact.email}</p>
+                        <p className="mt-2 text-slate-500">{contact.address}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              :
+              <h1 className="my-4 text-3xl md:text-5xl text-white opacity-75 font-bold leading-tight text-center md:text-left bg-clip-text text-transparent bg-gradient-to-r from-green-400 via-pink-500 to-purple-500"> Contacts are being fetched </h1>
+              }
+              <div>
+                <ContactForm
+                  saveContact={this.saveContact}
+                  updateHandler={this.updateHandler}
+                  error={this.state.err}>
+                </ContactForm>
+              </div>
+            </div>
+          )
+        }
+      }
+
+      const ContactForm = (props) => {
+        const saveContact = (e) => {
+          e.preventDefault()
+          props.saveContact(e.target)
+        }
+        return (
+          <div className="leading-normal tracking-normal text-indigo-400 m-6">
+            <h1 className="my-4 text-3xl md:text-5xl text-white opacity-75 font-bold leading-tight text-center bg-clip-text text-transparent bg-gradient-to-r from-green-400 via-pink-500 to-purple-500"> New Contact </h1>
+
+            {props.error ? <h3>{props.error}</h3> : null}
+            
+            <form className="opacity-75 w-full shadow-lg rounded-lg px-8 pt-6 pb-8 mb-4">
+             
+              <label className="block text-blue-300 py-2 font-bold mb-2">name (req)</label>
+              <input className="shadow appearance-none border rounded w-full p-3 text-gray-700 leading-tight focus:ring transform transition hover:scale-105 duration-300 ease-in-out" type="text" name="name" onChange={props.updateHandler}></input>
+              
+              <label className="block text-blue-300 py-2 font-bold mb-2" >email (req)</label>
+              <input className="shadow appearance-none border rounded w-full p-3 text-gray-700 leading-tight focus:ring transform transition hover:scale-105 duration-300 ease-in-out" type="text" name="email" onChange={props.updateHandler}></input>
+              
+              <label className="block text-blue-300 py-2 font-bold mb-2" >address(optional)</label>
+              <input className="shadow appearance-none border rounded w-full p-3 text-gray-700 leading-tight focus:ring transform transition hover:scale-105 duration-300 ease-in-out" type="text" name="address" onChange={props.updateHandler}></input>
+              
+              <div className="flex items-center justify-between pt-4">
+                <button className="bg-gradient-to-r from-purple-800 to-green-500 hover:from-pink-500 hover:to-green-500 text-white font-bold py-2 px-4 rounded focus:ring transform transition hover:scale-105 duration-300 ease-in-out"  onClick={saveContact}>Save</button>
+              </div>
+            
+            </form>
+          </div>
+        )
+      }
+      // mount app
+      const container = document.getElementById('root');
+      const root = ReactDOM.createRoot(container);
+      root.render(<App/>);
+    </script>
+  </body>
+</html>
